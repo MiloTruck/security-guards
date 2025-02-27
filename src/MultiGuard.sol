@@ -46,6 +46,7 @@ contract MultiGuard is BaseGuard {
 
     /// @notice Add a guard to a Safe address
     /// @dev Called by the Safe contract
+    /// @dev WARNING: If too many guards are added, both hooks may run out of gas and revert
     function addGuard(address guard) external onlyInstalled {
         require(guards[msg.sender].add(guard), "Guard already added");
 
