@@ -133,11 +133,11 @@ contract MultiGuard is BaseGuard {
         ISafe safe = ISafe(msg.sender);
 
         // Ensure this contract was not uninstalled without a delay
-        uint256 timestamp = uninstallTimestamp[msg.sender];
-        if (timestamp != 0 && block.timestamp > timestamp) {
+        if (!isInstalled(address(safe))) {
+            uint256 timestamp = uninstallTimestamp[msg.sender];
+            require(timestamp != 0 && block.timestamp > timestamp, "Delay not passed");
+
             uninstallTimestamp[msg.sender] = 0;
-        } else {
-            require(isInstalled(address(safe)), "MultiGuard was uninstalled");
         }
 
         // Call post-transaction hook for all guards
