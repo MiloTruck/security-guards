@@ -2,6 +2,7 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+via_ir = true
 
 remappings = [
     "@safe/=lib/safe-smart-account/contracts/",

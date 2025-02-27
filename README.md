@@ -1,66 +1,26 @@
-## Foundry
+# security-guards
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Library of guards for Safe accounts.
 
-Foundry consists of:
+## Contracts
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```ml
+guards
+├─ Guard - "Base guard meant to be inherited by custom guards"
+├─ RestrictiveGuard - "Imposes security restrictions on transactions"
+MultiGuard - "Forwards pre and post transaction hooks to multiple guards"
 ```
 
-### Test
+## Safety
 
-```shell
-$ forge test
-```
+This is codebase has **not** been audited.
 
-### Format
+We **do not give any warranties** and **will not be liable for any loss** incurred through any use of this codebase.
 
-```shell
-$ forge fmt
-```
+## Installation
 
-### Gas Snapshots
+To install with [**Foundry**](https://github.com/gakonst/foundry):
 
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```sh
+forge install MiloTruck/safe-guards
 ```
