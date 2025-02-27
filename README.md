@@ -1,6 +1,6 @@
 # security-guards
 
-Library of guards for Safe accounts.
+A collection of guards for Safe accounts.
 
 ## Contracts
 
