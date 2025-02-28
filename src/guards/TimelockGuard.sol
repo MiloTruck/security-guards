@@ -6,8 +6,8 @@ import {Enum, ISafe, Guard} from "./Guard.sol";
 import {IMultiGuard} from "src/interfaces/IMultiGuard.sol";
 
 /// @notice Imposes a timelock on all transactions
-/// @author MiloTruck
 /// @dev WARNING: setDelay and setCancellor must be called after adding this guard
+/// @author MiloTruck
 contract TimelockGuard is Guard {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
