@@ -14,75 +14,36 @@ contract MultiGuard is BaseGuard {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event GuardAdded(address indexed safe, address indexed guard);
-    event GuardRemovalInitiated(address indexed safe, address indexed guard);
     event GuardRemoved(address indexed safe, address indexed guard);
-    event UninstallInitiated(address indexed safe);
 
     /// @dev Storage slot of the guard address in a Safe account
     /// From https://github.com/safe-global/safe-smart-account/blob/v1.4.1/contracts/base/GuardManager.sol#L41-L42
     uint256 internal constant GUARD_STORAGE_SLOT = 0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8;
 
-    /// @dev Delay for removing a guard or complete uninstallation
-    /// Prevents instantly removing guards or uninstalling to bypass restrictions in subsequent transactions
-    uint256 public constant DELAY = 3 days;
-
     /// @dev Mapping of Safe address to installed guards
     mapping(address => EnumerableSet.AddressSet) internal guards;
-
-    /// @dev Mapping of pending removals for guards
-    mapping(address => mapping(address => uint256)) public removeTimestamp;
-
-    /// @dev Mapping of pending uninstalls
-    mapping(address => uint256) public uninstallTimestamp;
-
-    // ======================================== CONFIGURATION FUNCTIONS ========================================
-
-    modifier onlyInstalled() {
-        require(isInstalled(msg.sender), "MultiGuard not installed");
-        _;
-    }
 
     // ======================================== CONFIGURATION FUNCTIONS ========================================
 
     /// @notice Add a guard to a Safe address
     /// @dev Called by the Safe contract
     /// @dev WARNING: If too many guards are added, both hooks may run out of gas and revert
-    function addGuard(address guard) external onlyInstalled {
+    function addGuard(address guard) external {
+        require(isInstalled(msg.sender), "MultiGuard not installed");
+
         require(guards[msg.sender].add(guard), "Guard already added");
 
         emit GuardAdded(msg.sender, guard);
     }
 
-    /// @notice Initiate a guard removal
-    /// @dev Called by the Safe contract
-    function initiateRemoveGuard(address guard) external onlyInstalled {
-        require(guards[msg.sender].contains(guard), "Guard not added");
-
-        removeTimestamp[msg.sender][guard] = block.timestamp + DELAY;
-
-        emit GuardRemovalInitiated(msg.sender, guard);
-    }
-
     /// @notice Remove a guard from a Safe address
     /// @dev Called by the Safe contract
-    function removeGuard(address guard) external onlyInstalled {
-        uint256 timestamp = removeTimestamp[msg.sender][guard];
-        require(timestamp != 0 && block.timestamp > timestamp, "Delay not passed");
+    function removeGuard(address guard) external {
+        require(isInstalled(msg.sender), "MultiGuard not installed");
 
-        guards[msg.sender].remove(guard);
-        removeTimestamp[msg.sender][guard] = 0;
+        require(guards[msg.sender].remove(guard), "Guard not added");
 
         emit GuardRemoved(msg.sender, guard);
-    }
-
-    /// @notice Initiate uninstallation of the MultiGuard contract
-    /// @dev Called by a Safe account when changing its guard address
-    /// @dev WARNING: Guards are not removed on uninstall. If a Safe account uninstalls MultiGuard and
-    /// "reinstalls" it subsequently, all previous guards and removal timestamps will carry over
-    function initiateUninstall() external onlyInstalled {
-        uninstallTimestamp[msg.sender] = block.timestamp + DELAY;
-
-        emit UninstallInitiated(msg.sender);
     }
 
     // ======================================== GUARD FUNCTIONS ========================================
@@ -101,9 +62,6 @@ contract MultiGuard is BaseGuard {
         bytes calldata signatures,
         address msgSender
     ) external {
-        // Caller is the Safe contract
-        ISafe safe = ISafe(msg.sender);
-
         // Include current nonce in transaction
         Guard.SafeTransaction memory safeTx = Guard.SafeTransaction({
             to: to,
@@ -115,35 +73,27 @@ contract MultiGuard is BaseGuard {
             gasPrice: gasPrice,
             gasToken: gasToken,
             refundReceiver: refundReceiver,
-            signatures: signatures,
-            msgSender: msgSender,
-            nonce: safe.nonce() - 1
+            nonce: ISafe(msg.sender).nonce() - 1
         });
 
         // Call pre-transaction hook for all guards
-        address[] memory _guards = getGuards(address(safe));
+        address[] memory _guards = getGuards(msg.sender);
         for (uint256 i; i < _guards.length; i++) {
-            Guard(_guards[i]).beforeExecutionHook(safeTx, safe);
+            Guard(_guards[i]).beforeExecutionHook(safeTx, signatures, msgSender, ISafe(msg.sender));
         }
     }
 
     /// @notice Post-transaction hook called by the Safe contract
     function checkAfterExecution(bytes32 txHash, bool success) external {
-        // Caller is the Safe contract
-        ISafe safe = ISafe(msg.sender);
-
-        // Ensure this contract was not uninstalled without a delay
-        if (!isInstalled(address(safe))) {
-            uint256 timestamp = uninstallTimestamp[msg.sender];
-            require(timestamp != 0 && block.timestamp > timestamp, "Delay not passed");
-
-            uninstallTimestamp[msg.sender] = 0;
+        // Ensure all guards were removed before uninstallation
+        if (!isInstalled(msg.sender)) {
+            require(guards[msg.sender].length() == 0, "Guards not removed");
         }
 
         // Call post-transaction hook for all guards
-        address[] memory _guards = getGuards(address(safe));
+        address[] memory _guards = getGuards(msg.sender);
         for (uint256 i; i < _guards.length; i++) {
-            Guard(_guards[i]).afterExecutionHook(txHash, success, safe);
+            Guard(_guards[i]).afterExecutionHook(txHash, success, ISafe(msg.sender));
         }
     }
 

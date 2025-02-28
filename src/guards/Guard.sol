@@ -17,12 +17,15 @@ abstract contract Guard {
         uint256 gasPrice;
         address gasToken;
         address refundReceiver;
-        bytes signatures;
-        address msgSender;
         uint256 nonce;
     }
 
-    function beforeExecutionHook(SafeTransaction calldata safeTransaction, ISafe safe) external virtual {}
+    function beforeExecutionHook(
+        SafeTransaction calldata safeTransaction,
+        bytes calldata signatures,
+        address msgSender,
+        ISafe safe
+    ) external virtual {}
 
     function afterExecutionHook(bytes32 txHash, bool success, ISafe safe) external virtual {}
 }
