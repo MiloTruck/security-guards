@@ -8,6 +8,7 @@ A collection of guards for Safe accounts.
 guards
 ├─ Guard - "Base guard meant to be inherited by custom guards"
 ├─ RestrictiveGuard - "Imposes security restrictions on transactions"
+├─ TimelockGuard - "Imposes a timelock on all transactions"
 MultiGuard - "Forwards pre and post transaction hooks to multiple guards"
 ```
 
