@@ -28,4 +28,6 @@ abstract contract Guard {
     ) external virtual {}
 
     function afterExecutionHook(bytes32 txHash, bool success, ISafe safe) external virtual {}
+
+    function onRemove(address safe) external virtual {}
 }

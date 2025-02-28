@@ -43,6 +43,8 @@ contract MultiGuard is BaseGuard {
 
         require(guards[msg.sender].remove(guard), "Guard not added");
 
+        Guard(guard).onRemove(msg.sender);
+
         emit GuardRemoved(msg.sender, guard);
     }
 
@@ -110,5 +112,10 @@ contract MultiGuard is BaseGuard {
         address guard = abi.decode(data, (address));
 
         return guard == address(this);
+    }
+
+    /// @notice Check if a guard is added to a Safe address
+    function hasGuard(address safe, address guard) external view returns (bool) {
+        return guards[safe].contains(guard);
     }
 }
